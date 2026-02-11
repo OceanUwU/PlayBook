@@ -80,6 +80,7 @@ local DEFAULT_BOOKS <const> = {
 	"Frankenstein.txt",
 	"The Great Gatsby.txt",
 }
+local readingOrientation = 1
 
 -- Shared
 -- The current scene being displayed
@@ -294,6 +295,21 @@ local MENU_OPTIONS <const> = {
 			end
 		end
 	},
+	{
+		label = "Orientation",
+		options =  {
+			"Horizontal",
+			"Vertical (Left)",
+			"Vertical (Right)",
+			"Upside Down"
+		},
+		initialValue = function ()
+			return readingOrientation
+		end,
+		callback = function (index)
+			readingOrientation = index
+		end
+	},
 }
 
 -- Generate the options for the reader font menu
@@ -350,6 +366,7 @@ local saveState = function ()
 	state.progressIndicator = progressIndicator
 	state.playScrollSound = playScrollSound
 	state.showDefaultBooks = showDefaultBooks
+	state.readingOrientation = readingOrientation
 	playdate.datastore.write(state)
 	print("State saved!")
 	-- print("State saved: " .. json.encode(state))
@@ -372,6 +389,7 @@ local loadState = function ()
 	setProgressIndicator(getOrDefault(state, "progressIndicator", "number", progressIndicator))
 	playScrollSound = getOrDefault(state, "playScrollSound", "boolean", playScrollSound)
 	showDefaultBooks = getOrDefault(state, "showDefaultBooks", "boolean", showDefaultBooks)
+	readingOrientation = getOrDefault(state, "readingOrientation", "number", readingOrientation)
 end
 
 local loadCurrentBookSettings = function ()
