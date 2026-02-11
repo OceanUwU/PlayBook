@@ -666,7 +666,7 @@ local drawScrollbar = function ()
 	scrollbarButton:draw(LEFT, VERT_MARGIN)
 	scrollbarArrow:draw(LEFT + 2, VERT_MARGIN + 2)
 	-- Draw the scrollbar length
-	for i = 1, 17 do
+	for i = 1, isHorizontal() and 17 or 31 do
 		scrollbarSection:draw(LEFT, VERT_MARGIN + scrollbarButton.height + (i - 1) * scrollbarSection.height)
 	end
 	-- Draw the bottom arrow
