@@ -993,7 +993,7 @@ function playdate.update()
 		drawLibrary()
 	elseif scene == READER then
 		-- Update offset when the D-pad is held
-		offset = offset + directionHeld * BTN_SCROLL_SPEED
+		offset = offset + directionHeld * BTN_SCROLL_SPEED * delta
 		if menuActive or not playScrollSound then
 			sound:setVolume(0)
 		else
