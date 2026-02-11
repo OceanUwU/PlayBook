@@ -80,7 +80,12 @@ local DEFAULT_BOOKS <const> = {
 	"Frankenstein.txt",
 	"The Great Gatsby.txt",
 }
+-- 
 local readingOrientation = 1
+function isHorizontal() return readingOrientation == 1 or readingOrientation == 4 end
+function rotationDegrees() if readingOrientation == 1 then return 0 elseif readingOrientation == 2 then return 90 elseif readingOrientation == 3 then return 270 else return 180 end end
+function height() return isHorizontal() and DEVICE_HEIGHT or DEVICE_WIDTH end
+function width() return isHorizontal() and DEVICE_WIDTH or DEVICE_HEIGHT end
 
 -- Shared
 -- The current scene being displayed
@@ -308,6 +313,9 @@ local MENU_OPTIONS <const> = {
 		end,
 		callback = function (index)
 			readingOrientation = index
+			if scene == READER then
+				reloadReader()
+			end
 		end
 	},
 }
@@ -620,8 +628,8 @@ end
 
 -- Draw a candle to the side of the text to indicate progress
 local drawCandle = function ()
-	local TOP = textProgress * (DEVICE_HEIGHT - candleTop.height - 10 - candleHolder.height) + 4
-	local LEFT = DEVICE_WIDTH - 1 - candleSection.width
+	local TOP = textProgress * (height() - candleTop.height - 10 - candleHolder.height) + 4
+	local LEFT = width() - 1 - candleSection.width
 	-- Draw the top of the candle
 	candleTop:draw(LEFT, TOP)
 	-- Draw the flame flickering
@@ -639,21 +647,21 @@ local drawCandle = function ()
 	end
 	flame:draw(LEFT, TOP)
 	-- Draw the candle length
-	local sections = floor((DEVICE_HEIGHT - TOP - candleTop.height) / candleSection.height) + 1
+	local sections = floor((height() - TOP - candleTop.height) / candleSection.height) + 1
 	for i = 1, sections do
 		candleSection:draw(LEFT, TOP + candleTop.height + (i - 1) * candleSection.height)
 	end
 	-- Draw the holder
-	candleHolder:draw(LEFT, DEVICE_HEIGHT - candleHolder.height)
+	candleHolder:draw(LEFT, height() - candleHolder.height)
 	-- Draw the drips
-	local bottom = DEVICE_HEIGHT - candleDripLeft.height + 4 - candleHolder.height
+	local bottom = height() - candleDripLeft.height + 4 - candleHolder.height
 	candleDripLeft:draw(LEFT, min(bottom, TOP + 40 + textProgress * 115))
 	candleDripRight:draw(LEFT + candleSection.width - candleDripRight.width, min(bottom, TOP + 90 + textProgress * 20))
 end
 
 local drawScrollbar = function ()
 	local VERT_MARGIN = 2
-	local LEFT = DEVICE_WIDTH - 2 - scrollbarSection.width
+	local LEFT = width() - 2 - scrollbarSection.width
 	-- Draw the top arrow
 	scrollbarButton:draw(LEFT, VERT_MARGIN)
 	scrollbarArrow:draw(LEFT + 2, VERT_MARGIN + 2)
@@ -662,8 +670,8 @@ local drawScrollbar = function ()
 		scrollbarSection:draw(LEFT, VERT_MARGIN + scrollbarButton.height + (i - 1) * scrollbarSection.height)
 	end
 	-- Draw the bottom arrow
-	scrollbarButton:draw(LEFT, DEVICE_HEIGHT - VERT_MARGIN - scrollbarButton.height)
-	scrollbarArrow:draw(LEFT + 2, DEVICE_HEIGHT - VERT_MARGIN - scrollbarButton.height + 3, graphics.kImageFlippedY)
+	scrollbarButton:draw(LEFT, height() - VERT_MARGIN - scrollbarButton.height)
+	scrollbarArrow:draw(LEFT + 2, height() - VERT_MARGIN - scrollbarButton.height + 3, graphics.kImageFlippedY)
 	-- Draw the slider
 	local progress = textProgress
 	if progress <= 0.01 then
@@ -671,7 +679,7 @@ local drawScrollbar = function ()
 	elseif progress >= 0.99 then
 		progress = 1
 	end
-	local sliderY = VERT_MARGIN + scrollbarButton.height + floor(progress * (DEVICE_HEIGHT - VERT_MARGIN * 2 - scrollbarButton.height * 2 - scrollbarSlider.height))
+	local sliderY = VERT_MARGIN + scrollbarButton.height + floor(progress * (height() - VERT_MARGIN * 2 - scrollbarButton.height * 2 - scrollbarSlider.height))
 	scrollbarSlider:draw(LEFT + 1, sliderY)
 end
 
@@ -681,11 +689,13 @@ local drawText = function ()
 	graphics.setFont(FONTS[readerFontId].font)
 	-- Draw offset for debugging
 	-- graphics.drawText(playdate.getCrankPosition(), leftMargin, offset)
+	local img = graphics.image.new(width(), height())
+	graphics.pushContext(img)
 	if #lines > 0 then
 		-- Calculate where to begin drawing lines
 		local drawOffset = floor(offset) + emptyLinesAbove * lineHeight
 		local numOfLines = #lines
-		local lineEnd = min(ceil((DEVICE_HEIGHT - drawOffset) / lineHeight), numOfLines)
+		local lineEnd = min(ceil((height() - drawOffset) / lineHeight), numOfLines)
 		local topLineStart = nil
 		local topLineStop = nil
 		for i = 1, lineEnd do
@@ -710,8 +720,8 @@ local drawText = function ()
 			removeLines(prependLines(lineRange), true)
 		end
 		-- Detect end of text
-		if drawOffset + numOfLines * lineHeight < DEVICE_HEIGHT then
-			local lineRange = ceil((DEVICE_HEIGHT - (drawOffset + numOfLines * lineHeight)) / lineHeight)
+		if drawOffset + numOfLines * lineHeight < height() then
+			local lineRange = ceil((height() - (drawOffset + numOfLines * lineHeight)) / lineHeight)
 			-- lineRange = 1
 			removeLines(appendLines(lineRange), false)
 		end
@@ -721,6 +731,8 @@ local drawText = function ()
 	elseif progressIndicator == 3 then
 		drawScrollbar()
 	end
+	graphics.popContext()
+	img:rotatedImage(rotationDegrees()):draw(0, 0)
 end
 
 -- Draw an individual book
@@ -1166,7 +1178,7 @@ function addLines(additionalLines, append, startChar)
 	end
 
 	-- The max width in pixels that a line can be
-	local MAX_WIDTH <const> = DEVICE_WIDTH - leftMargin - rightMargin
+	local MAX_WIDTH <const> = width() - leftMargin - rightMargin
 	-- The text of the current line as it is processed
 	local currentLine = ""
 	-- The index of the first character of the current line
