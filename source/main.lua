@@ -1367,14 +1367,35 @@ function playdate.cranked(change, acceleratedChange)
 	end
 end
 
+function up()
+	if not menuActive then
+		directionHeld = 1
+	end
+end
+function down()
+	if not menuActive then
+		directionHeld = -1
+	end
+end
+function right()
+	if scene == READER then
+		directionHeld = -6
+	end
+end
+function left()
+	if scene == READER then
+		directionHeld = 6
+	end
+end
+
 function playdate.upButtonDown()
-	-- print("up")
 	if scene == LIBRARY then
 		offset = offset + BOOK_OFFSET_SIZE
 	else
-		if not menuActive then
-			directionHeld = 1
-		end
+		if readingOrientation == 1 then up()
+		elseif readingOrientation == 2 then left()
+		elseif readingOrientation == 3 then right()
+		elseif readingOrientation == 4 then down() end
 	end
 end
 
@@ -1383,13 +1404,13 @@ function playdate.upButtonUp()
 end
 
 function playdate.downButtonDown()
-	-- print("down")
 	if scene == LIBRARY then
 		offset = offset - BOOK_OFFSET_SIZE
 	else
-		if not menuActive then
-			directionHeld = -1
-		end
+		if readingOrientation == 1 then down()
+		elseif readingOrientation == 2 then right()
+		elseif readingOrientation == 3 then left()
+		elseif readingOrientation == 4 then up() end
 	end
 end
 
@@ -1398,9 +1419,11 @@ function playdate.downButtonUp()
 end
 
 function playdate.leftButtonDown()
-	-- print("left")
 	if scene == READER then
-		directionHeld = 6
+		if readingOrientation == 1 then left()
+		elseif readingOrientation == 2 then down()
+		elseif readingOrientation == 3 then up()
+		elseif readingOrientation == 4 then right() end
 	end
 end
 
@@ -1409,9 +1432,11 @@ function playdate.leftButtonUp()
 end
 
 function playdate.rightButtonDown()
-	-- print("right")
 	if scene == READER then
-		directionHeld = -6
+		if readingOrientation == 1 then right()
+		elseif readingOrientation == 2 then up()
+		elseif readingOrientation == 3 then down()
+		elseif readingOrientation == 4 then left() end
 	end
 end
 
