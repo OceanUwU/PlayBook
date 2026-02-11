@@ -27,7 +27,7 @@ local MAX_VOLUME <const> = 0.025
 -- The speed of scrolling via the crank
 local CRANK_SCROLL_SPEED <const> = 1.2
 -- The speed of scrolling via the D-pad
-local BTN_SCROLL_SPEED <const> = 6
+local BTN_SCROLL_SPEED <const> = 300
 local MARGIN_WITH_BORDER <const> = 22
 local MARGIN_WITHOUT_BORDER <const> = 6
 local BOOK_SEPARATION <const> = 42
@@ -732,7 +732,30 @@ local drawText = function ()
 		drawScrollbar()
 	end
 	graphics.popContext()
-	img:rotatedImage(rotationDegrees()):draw(0, 0)
+	if not isHorizontal() then img = rotateImg90(img) end
+	if readingOrientation <= 2 then
+		img:draw(0, 0)
+	else
+		img:drawRotated(DEVICE_WIDTH / 2, DEVICE_HEIGHT / 2, 180)
+	end
+end
+
+-- rotating an entire image 90 degrees using the default image rotation functions is super slow on rev b, so split the image into chunks then rotate them all
+-- this doesnt optimise it enough so that the app runs at full 50fps speed, i'm sure there's a way to do so though
+function rotateImg90(img)
+	local newImg = graphics.image.new(img.height, img.width)
+	for x = 0, newImg.height / 200 do
+		for y = 0, newImg.width / 120 do
+			local segment = graphics.image.new(120, 200)
+			graphics.pushContext(segment)
+			img:draw(0, 0, graphics.kImageUnflipped, playdate.geometry.rect.new(segment.width * x, segment.height * y, segment.width, segment.height))
+			graphics.popContext()
+			graphics.pushContext(newImg)
+			segment:drawRotated(newImg.width - y * segment.height - segment.height / 2, x * segment.width + segment.width / 2, 90)
+			graphics.popContext()
+		end
+	end
+	return newImg
 end
 
 -- Draw an individual book
@@ -907,6 +930,8 @@ end
 
 -- Update loop
 function playdate.update()
+	local delta = playdate.getElapsedTime()
+	playdate.resetElapsedTime()
 	if scene == LIBRARY then
 		local folderSwitched = false
 		if playdate.buttonJustPressed(playdate.kButtonLeft) then
@@ -967,7 +992,6 @@ function playdate.update()
 		end
 		drawLibrary()
 	elseif scene == READER then
-		drawText()
 		-- Update offset when the D-pad is held
 		offset = offset + directionHeld * BTN_SCROLL_SPEED
 		if menuActive or not playScrollSound then
@@ -1116,8 +1140,6 @@ end
 -- Add the given number of lines to the list
 -- Note that if there are no more lines available, less than the given number of lines will be returned
 function addLines(additionalLines, append, startChar)
-	-- Keep track of time taken
-	playdate.resetElapsedTime()
 	if text == nil then
 		print("Error: text is nil")
 		return
