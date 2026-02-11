@@ -696,12 +696,14 @@ local drawText = function ()
 			local lineRange = ceil((drawOffset + 2 * lineHeight) / lineHeight)
 			-- lineRange = 1
 			removeLines(prependLines(lineRange), true)
+			forceRedraw = true
 		end
 		-- Detect end of text
 		if drawOffset + numOfLines * lineHeight < DEVICE_HEIGHT then
 			local lineRange = ceil((DEVICE_HEIGHT - (drawOffset + numOfLines * lineHeight)) / lineHeight)
 			-- lineRange = 1
 			removeLines(appendLines(lineRange), false)
+			forceRedraw = true
 		end
 	end
 	if progressIndicator == 2 then
@@ -958,9 +960,9 @@ function playdate.update()
 			end
 		end
 		if offset ~= lastOffset or forceRedraw then
+			forceRedraw = false
 			drawText()
 			lastOffset = offset
-			forceRedraw = false
 		end
 	end
 	if menuActive then
